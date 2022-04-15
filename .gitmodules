@@ -1,0 +1,4 @@
+[submodule "RIOT"]
+	path = RIOT
+	url = https://github.com/thingsat/RIOT.git
+	branch = cubedate
