@@ -1,0 +1,1 @@
+../../RIOT/examples/gcoap/client.c

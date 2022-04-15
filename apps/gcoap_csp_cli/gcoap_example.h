@@ -1,0 +1,1 @@
+../../RIOT/examples/gcoap/gcoap_example.h
