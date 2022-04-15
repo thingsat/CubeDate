@@ -1,0 +1,4 @@
+# Add a random radio to the default stm32 BOARD
+ifeq ($(BOARD),nucleo-f446re)
+  USEMODULE += at86rf233
+endif
