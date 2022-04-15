@@ -1,0 +1,62 @@
+# Required variables defined in riotboot.inc.mk or Makefile.include
+BINDIR_APP = $(CURDIR)/bin/$(BOARD)/$(APPLICATION)
+$(BINDIR_APP): $(CLEAN)
+	$(Q)mkdir -p $(BINDIR_APP)
+EPOCH := $(shell date +%s)
+APP_VER ?= $(EPOCH)
+# File-System igore '.'
+SUIT_SEPARATOR ?= _
+# Default Mount
+SUIT_COAP_FSROOT ?= /media/riot_fatfs_disk
+# Default BASEPATH
+SUIT_COAP_BASEPATH ?= $(APPLICATION)/$(BOARD)
+
+# Default addressing
+ifneq (,$(filter libcsp,$(USEPKG)))
+  SUIT_SERVER ?= [::33]
+  SUIT_CLIENT ?= [::22]
+else
+  SUIT_SERVER ?= [2001:db8::2]
+  SUIT_CLIENT ?= [2001:db8::3]
+endif
+SUIT_COAP_SERVER ?= $(SUIT_SERVER)/vfs/nvm0
+
+suit/publish-all: suit/publish-fw suit/publish-fletcher
+
+# Set settings for publishing fetcher payload
+ifneq (,$(filter suit/publihs-all suit/publish-fletcher,$(MAKECMDGOALS)))
+    SUIT_FLETCHER_PAYLOAD ?= $(CURDIR)/application/fletcher32_fc.bin
+    SUIT_FLETCHER_PAYLOAD_BIN ?= $(CURDIR)/bin/$(BOARD)/ram_fc$(SUIT_SEPARATOR)$(APP_VER).bin
+    BUILD_FILES += $(SUIT_FLETCHER_PAYLOAD_BIN)
+
+    $(SUIT_FLETCHER_PAYLOAD_BIN): $(SUIT_FLETCHER_PAYLOAD)
+			$(Q)cp $(SUIT_FLETCHER_PAYLOAD) $@
+
+    SUIT_FLETCHER_STORAGE ?= ram:0
+    SUIT_MANIFEST_BASENAME ?= ram_suit
+    SUIT_MANIFEST_PAYLOADS += $(SUIT_FLETCHER_PAYLOAD_BIN)
+    SUIT_MANIFEST_SLOTFILES += $(SUIT_FLETCHER_PAYLOAD_BIN):0:$(SUIT_FLETCHER_STORAGE)
+endif
+# Set settings for publishing fake fw payloads to native
+ifneq (,$(filter suit/publish-all suit/publish-fw,$(MAKECMDGOALS)))
+  ifeq ($(BOARD),native)
+    SUIT_NATIVE_PAYLOAD ?= "AABBCCDD"
+    SUIT_NATIVE_PAYLOAD_BIN ?= $(BINDIR_APP)$(SUIT_SEPARATOR)$(APP_VER).bin
+    BUILD_FILES += $(SUIT_NATIVE_PAYLOAD_BIN)
+
+    $(SUIT_NATIVE_PAYLOAD_BIN): $(BINDIR_APP)
+			@$(Q)echo $(SUIT_NATIVE_PAYLOAD) > $@
+
+    SUIT_FW_STORAGE ?= /nvm0/SLOT0.TXT
+    SUIT_MANIFEST_PAYLOADS ?= $(SUIT_NATIVE_PAYLOAD_BIN)
+    SUIT_MANIFEST_SLOTFILES ?= $(SUIT_NATIVE_PAYLOAD_BIN):0:$(SUIT_FW_STORAGE)
+  else
+    SUIT_MANIFEST_PAYLOADS += $(SLOT0_RIOT_BIN) $(SLOT1_RIOT_BIN)
+    SUIT_MANIFEST_SLOTFILES += $(SLOT0_RIOT_BIN):$(SLOT0_OFFSET) \
+                              $(SLOT1_RIOT_BIN):$(SLOT1_OFFSET)
+  endif
+endif
+
+# Use apps/gcoap_fs image
+FATFS_IMAGE_FILE ?= $(CURDIR)/../gcoap_fs/riot_fatfs_disk.img
+SUIT_FATFS_IMAGE ?= $(FATFS_IMAGE_FILE)

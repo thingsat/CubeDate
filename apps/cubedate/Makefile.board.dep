@@ -1,0 +1,21 @@
+ifeq ($(BOARD),native)
+  # Use VFS storage for native
+  USEMODULE += suit_storage_vfs
+  ## Use VFS
+  USEMODULE += vfs
+  USEMODULE += vfs_default
+  USEMODULE += vfs_auto_format
+  ## Use long file names
+  CFLAGS += -DFATFS_FFCONF_OPT_USE_LFN=1
+else
+  USEMODULE += suit_storage_flashwrite
+endif
+
+ifneq (,$(filter libcsp,$(USEPKG)))
+  ifeq ($(BOARD),native)
+    FEATURES_REQUIRED += periph_can
+  else
+    # Default to MCP2515 for non native BOARDs to cover larger BOARD scpectrum
+    USEMODULE += mcp2515
+  endif
+endif

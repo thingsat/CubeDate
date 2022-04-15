@@ -1,0 +1,7 @@
+# Use libCSP
+USEPKG += libcsp
+# libCSP ports must be <64, so arbitrarily pick port 2 as the default
+# CoAP port instead of 5683
+COAP_PORT ?= 2
+CFLAGS += -DCOAP_PORT=$(COAP_PORT)
+CFLAGS += -DCONFIG_GCOAP_PORT=$(COAP_PORT)
